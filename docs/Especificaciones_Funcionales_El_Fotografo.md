@@ -1,9 +1,10 @@
 # Especificaciones Funcionales
 ## Sistema de Pedidos y Control de Ventas — "El Fotógrafo" (Bar y Licorería)
 
-**Versión:** 1.0
+**Versión:** 1.1
 **Fecha:** 2 de septiembre de 2026
 **Estado:** Borrador para revisión
+**Historial de cambios:** v1.1 agrega Historial de ventas (5.7) y Liberar mesa (5.8).
 
 ---
 
@@ -75,6 +76,19 @@ El sistema debe soportar ambos flujos de venta desde una misma plataforma.
 - **Encargado de confianza:** también puede dar de alta nuevos usuarios/empleados. Se recomienda validar en la etapa de diseño si tendrá el mismo nivel de acceso que el dueño o uno intermedio (ej. sin ver reportes financieros completos).
 - **Mesero/Empleado:** acceso limitado a tomar pedidos y procesar cobros; sin acceso a reportes ni configuración.
 - El sistema debe tener un mecanismo simple de inicio de sesión por usuario/rol.
+
+### 5.7 Historial de ventas
+
+- Debe existir una sección de **historial** donde se puedan consultar ventas (cuentas cerradas) pasadas, con filtros por **mesa** y por **fecha**.
+- Desde una venta del historial, debe poder **volver a generar y descargar el recibo en PDF** (por ejemplo, si el cliente lo pide de nuevo).
+- El envío del recibo al cliente se hace de forma **manual**: la persona descarga el PDF y lo comparte por WhatsApp o correo desde su propio celular. El sistema no envía correos ni mensajes automáticamente (se evita así depender de un servicio externo de pago).
+- Acceso restringido a **dueño/a y encargado de confianza** únicamente.
+
+### 5.8 Liberar mesa
+
+- Si una mesa se abrió por error (o el cliente se fue sin pedir nada), debe existir una opción de **"Liberar mesa"** que cierre esa cuenta sin necesidad de cobrar.
+- Esta opción solo debe estar disponible si la cuenta **no tiene ningún producto agregado**. Si ya tiene productos, no se puede liberar directamente (para evitar borrar ventas por error); en ese caso se debe cobrar o gestionar normalmente.
+- Disponible para **ambos roles** (mesero y dueño/encargado), ya que es una corrección operativa del día a día, no una acción sensible.
 
 ## 6. Requerimientos no funcionales
 

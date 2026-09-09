@@ -1,10 +1,11 @@
 # Plan de Implementación
 ## Sistema de Pedidos y Control de Ventas — "El Fotógrafo"
 
-**Versión:** 1.0
+**Versión:** 1.1
 **Fecha:** 2 de septiembre de 2026
 **Destinado a:** Agente de código autónomo (opencode)
-**Documentos base:** Especificaciones_Funcionales_El_Fotografo.md · Especificaciones_Tecnicas_El_Fotografo.md
+**Documentos base:** Especificaciones_Funcionales_El_Fotografo.md (v1.1) · Especificaciones_Tecnicas_El_Fotografo.md (v1.1)
+**Historial de cambios:** v1.1 agrega Etapa 8 (Liberar mesa e Historial de ventas).
 
 > Este documento define el **orden** en que debe construirse el sistema. Cada etapa debe quedar funcional y verificable antes de pasar a la siguiente. No avanzar a una etapa nueva si la anterior tiene errores pendientes.
 
@@ -103,10 +104,25 @@
 3. Despliegue a Vercel y conexión con el proyecto de Supabase de producción.
 4. Verificación de la etapa: flujo completo de principio a fin (login → tomar pedido → cobrar → ver recibo → ver reporte) funcionando en el ambiente desplegado.
 
+## Etapa 8 — Liberar mesa e Historial de ventas
+
+1. En `/mesas/[id]`, agregar botón **"Liberar mesa"**, visible solo cuando la orden abierta no tiene `order_items`. Al confirmarlo, cambiar `status` de la orden a `cancelled` y liberar la mesa.
+2. En el backend, validar de nuevo (no solo en el frontend) que la orden no tenga productos antes de permitir liberarla — rechazar la operación si ya tiene al menos un `order_item`.
+3. Crear pantalla `/historial`: buscador de ventas cerradas (`status = closed`) con filtros por mesa y por rango de fechas.
+4. Desde cada resultado del historial, permitir volver a descargar el recibo en PDF (reutilizando la lógica de la Etapa 4), para que el dueño pueda compartirlo manualmente con el cliente.
+5. Restringir `/historial` a roles `owner`/`manager`, igual que `/reportes`.
+6. Verificación de la etapa: se puede abrir una mesa por error y liberarla sin dejar rastro en ventas; se puede cerrar una cuenta, encontrarla luego en `/historial` filtrando por esa mesa, y volver a descargar su recibo con los mismos datos originales.
+
+**Criterios de aceptación:**
+- Una orden con al menos un `order_item` NO puede liberarse, ni siquiera manipulando la petición directamente al backend (no confiar solo en que el botón esté oculto/deshabilitado).
+- Las mesas liberadas (`status = cancelled`) no aparecen en `/reportes` ni en `/historial` como ventas.
+- El PDF regenerado desde `/historial` es idéntico en contenido al que se generó originalmente al momento del cobro (mismos productos, cantidades, precios y total).
+- Un usuario `waiter` no puede acceder a `/historial` (rechazado por el servidor, no solo oculto en la interfaz), pero SÍ puede usar "Liberar mesa" en `/mesas/[id]`.
+
 ---
 
 ## Notas para el agente
 
 - No se debe avanzar a la siguiente etapa si la actual no pasa su verificación.
 - Ante cualquier ambigüedad no cubierta en los documentos base, priorizar la opción más simple que cumpla el requerimiento, evitando dependencias o costos adicionales (ver especificación técnica, sección 12 y nota final).
-- Las etapas 0 a 5 constituyen el MVP funcional mínimo. Las etapas 6 y 7 son de robustez y pulido, pero igual de necesarias antes de considerar el proyecto listo para uso real en el negocio.
+- Las etapas 0 a 5 constituyen el MVP funcional mínimo. Las etapas 6 y 7 son de robustez y pulido, y la etapa 8 agrega mejoras solicitadas posteriormente — todas igual de necesarias antes de considerar el proyecto listo para uso real en el negocio.

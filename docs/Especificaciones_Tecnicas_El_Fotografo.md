@@ -1,10 +1,11 @@
 # Especificaciones Técnicas
 ## Sistema de Pedidos y Control de Ventas — "El Fotógrafo"
 
-**Versión:** 1.0
+**Versión:** 1.1
 **Fecha:** 2 de septiembre de 2026
 **Destinado a:** Implementación por agente de código autónomo (opencode)
-**Documento base:** Especificaciones_Funcionales_El_Fotografo.md (v1.0)
+**Documento base:** Especificaciones_Funcionales_El_Fotografo.md (v1.1)
+**Historial de cambios:** v1.1 agrega ruta `/historial`, acción "Liberar mesa" y actualiza matriz de permisos.
 
 > Este documento traduce las especificaciones funcionales en decisiones técnicas concretas. Toda decisión que en un proyecto normal quedaría a criterio del desarrollador está explicitada aquí para que el agente no tenga que inferir ni improvisar.
 
@@ -95,6 +96,8 @@ Supabase (PostgreSQL)
 
 **Regla de negocio:** una mesa (`table_id`) solo puede tener **una orden `open` a la vez**. Antes de abrir una nueva orden en una mesa, verificar que no exista otra abierta.
 
+**Regla de negocio — Liberar mesa:** la acción "Liberar mesa" cambia el `status` de la orden de `open` a `cancelled`, sin pasar por cobro. Solo debe permitirse si la orden **no tiene ningún `order_item` asociado** (`COUNT(order_items) = 0`). Si ya tiene productos agregados, el backend debe rechazar la operación aunque el cliente la solicite (no confiar solo en que el botón esté deshabilitado en la interfaz). Una orden `cancelled` libera la mesa (vuelve a mostrarse como disponible) y no debe contarse en reportes de ventas ni en el historial de ventas (ver sección 7).
+
 ## 4. Autenticación y sesiones
 
 - Login mediante **PIN numérico** (4-6 dígitos) en un teclado numérico en pantalla, sin usuario ni contraseña.
@@ -108,6 +111,8 @@ Supabase (PostgreSQL)
 |---|---|---|
 | Tomar pedidos (mesa y directo) | ✅ | ✅ |
 | Cerrar/cobrar cuenta | ✅ | ✅ |
+| Liberar mesa vacía (sin productos) | ✅ | ✅ |
+| Ver historial de ventas y regenerar recibo | ✅ | ❌ |
 | Ver reportes de ventas | ✅ | ❌ |
 | Gestionar catálogo de productos | ✅ | ❌ |
 | Gestionar mesas | ✅ | ❌ |
@@ -120,10 +125,11 @@ Supabase (PostgreSQL)
 | `/login` | Ingreso por PIN | Todos |
 | `/` (home) | Redirige según rol: mapa de mesas (waiter) o dashboard (owner/manager) | Autenticado |
 | `/mesas` | Vista tipo grid de todas las mesas, con color según estado (libre/ocupada) | Todos |
-| `/mesas/[id]` | Detalle de la cuenta de una mesa: agregar productos, ver acumulado, cerrar cuenta | Todos |
+| `/mesas/[id]` | Detalle de la cuenta de una mesa: agregar productos, ver acumulado, cerrar cuenta, o **liberar mesa** (solo si no tiene productos agregados) | Todos |
 | `/venta-directa` | Pantalla de venta rápida (mostrador/para llevar) | Todos |
 | `/cobro/[orderId]` | Selección de método de pago y confirmación de cierre | Todos |
 | `/recibo/[orderId]` | Vista de recibo + botón de descarga en PDF | Todos |
+| `/historial` | Búsqueda de ventas cerradas por mesa y/o rango de fechas, con acceso a volver a descargar el recibo en PDF de cualquiera | Owner/Manager |
 | `/productos` | CRUD de catálogo de productos | Owner/Manager |
 | `/mesas/configuracion` | CRUD de mesas (agregar, renombrar, desactivar) | Owner/Manager |
 | `/usuarios` | CRUD de usuarios y asignación de PIN | Owner/Manager |
@@ -134,6 +140,15 @@ Supabase (PostgreSQL)
 - **Ventas por período:** filtro rápido (hoy / esta semana / este mes) con suma de `total` de órdenes `closed` en el rango, agrupado por día.
 - **Productos más vendidos:** suma de `quantity` por `product_id` en el rango seleccionado, ordenado descendente.
 - Los reportes se calculan con consultas agregadas directas a la base de datos (no requieren un motor de analítica adicional dado el volumen bajo esperado).
+- Tanto reportes como historial solo consideran órdenes con `status = closed`.
+
+## 7.1 Historial de ventas
+
+- Listado de órdenes con `status = closed`, con filtros por:
+  - **Mesa** (`table_id`), incluyendo también las ventas directas si no se filtra por mesa.
+  - **Rango de fechas** (desde/hasta).
+- Cada resultado del historial debe mostrar: fecha/hora, mesa (o "venta directa"), total, método de pago, y un botón para **volver a generar el PDF** del recibo (reutilizando la misma lógica de la sección 8, con los datos ya guardados en `orders`/`order_items`).
+- No se implementa envío automático de correo/WhatsApp: el flujo es descargar el PDF y compartirlo manualmente desde el dispositivo del usuario.
 
 ## 8. Generación de recibo/ticket (PDF)
 
@@ -164,6 +179,7 @@ Dado que la caída de internet es **rara** y solo se requiere **consultar** (no 
     /productos
     /usuarios
     /reportes
+    /historial
   /api
     /auth
     /orders
