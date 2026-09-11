@@ -92,3 +92,7 @@ export function closeOrder(
     body: JSON.stringify({ payment_method: paymentMethod }),
   });
 }
+
+export function releaseOrder(orderId: string): Promise<OrderResult> {
+  return api(`/api/orders/${orderId}/release`, { method: "POST" });
+}

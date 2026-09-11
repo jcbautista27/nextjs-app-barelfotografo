@@ -14,7 +14,7 @@ export function isReportPeriod(value: unknown): value is ReportPeriod {
   );
 }
 
-type WallClock = {
+export type WallClock = {
   year: number;
   month: number;
   day: number;
@@ -24,7 +24,7 @@ type WallClock = {
 };
 
 /** Hora de pared en una zona horaria determinada (según el reloj local). */
-function wallClock(timeZone: string, date: Date): WallClock {
+export function wallClock(timeZone: string, date: Date): WallClock {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
@@ -58,7 +58,7 @@ function tzOffsetMs(timeZone: string, at: Date): number {
 }
 
 /** Convierte una hora de pared en Lima al instante UTC real. */
-function wallToDate(timeZone: string, w: WallClock, at: Date): Date {
+export function wallToDate(timeZone: string, w: WallClock, at: Date): Date {
   const asUtc = Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute, w.second);
   return new Date(asUtc + tzOffsetMs(timeZone, at));
 }

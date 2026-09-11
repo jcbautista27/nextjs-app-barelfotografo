@@ -22,6 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { href: "/usuarios", label: "Usuarios", roles: ["owner", "manager"] },
   { href: "/reportes", label: "Reportes", roles: ["owner", "manager"] },
+  { href: "/historial", label: "Historial", roles: ["owner", "manager"] },
 ];
 
 export function AppNav({ role }: { role: AppRole }) {
