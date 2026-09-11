@@ -114,7 +114,7 @@ export function CobroScreen({ orderId }: { orderId: string }) {
           <p className="text-sm text-muted-foreground">
             Esta cuenta ya fue cobrada. Puedes ver o descargar su recibo.
           </p>
-          <Button size="lg" render={<Link href={`/recibo/${order.id}`} />}>
+          <Button size="lg" nativeButton={false} render={<Link href={`/recibo/${order.id}`} />}>
             Ver recibo
           </Button>
         </div>

@@ -161,6 +161,7 @@ export function OrderEditor({
             size="lg"
             disabled={order.items.length === 0 || isOffline}
             title={isOffline ? "Sin conexión" : undefined}
+            nativeButton={false}
             render={<Link href={`/cobro/${order.id}`} />}
           >
             {cobroLabel}

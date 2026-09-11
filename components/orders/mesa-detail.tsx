@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useOffline } from "next/offline";
 import { toast } from "sonner";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, DoorOpen, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Order } from "@/lib/orders";
 import type { TableWithOpen } from "@/components/orders/order-api";
@@ -12,8 +12,17 @@ import {
   getTable,
   getOrder,
   openOrder,
+  releaseOrder,
 } from "@/components/orders/order-api";
 import { OrderEditor } from "@/components/orders/order-editor";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const POLL_MS = 8000;
 
@@ -31,6 +40,8 @@ export function MesaDetail({ tableId }: { tableId: string }) {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(false);
+  const [releasing, setReleasing] = useState(false);
+  const [releaseOpen, setReleaseOpen] = useState(false);
   const isOffline = useOffline();
 
   useEffect(() => {
@@ -88,6 +99,25 @@ export function MesaDetail({ tableId }: { tableId: string }) {
     }
   }
 
+  async function confirmRelease() {
+    if (!order) return;
+    setReleasing(true);
+    try {
+      await releaseOrder(order.id);
+      toast.success("Mesa liberada.");
+      setReleaseOpen(false);
+      const data = await getTable(tableId);
+      setTable(data.table);
+      setOrder(null);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "No se pudo liberar la mesa."
+      );
+    } finally {
+      setReleasing(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-10 text-center text-sm text-muted-foreground">
@@ -139,17 +169,30 @@ export function MesaDetail({ tableId }: { tableId: string }) {
       </div>
 
       {order ? (
-        <OrderEditor
-          order={order}
-          onChanged={() => {
-            if (table.open_order_id) {
-              void getOrder(table.open_order_id).then((res) =>
-                setOrder(res.order)
-              );
-            }
-          }}
-          cobroLabel="Cobrar cuenta"
-        />
+        <>
+          <OrderEditor
+            order={order}
+            onChanged={() => {
+              if (table.open_order_id) {
+                void getOrder(table.open_order_id).then((res) =>
+                  setOrder(res.order)
+                );
+              }
+            }}
+            cobroLabel="Cobrar cuenta"
+          />
+          {order.items.length === 0 ? (
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={releasing || isOffline}
+              title={isOffline ? "Sin conexión" : undefined}
+              onClick={() => setReleaseOpen(true)}
+            >
+              <DoorOpen /> Liberar mesa
+            </Button>
+          ) : null}
+        </>
       ) : occupied ? (
         <div className="rounded-xl border border-border p-10 text-center text-sm text-muted-foreground">
           Cargando cuenta…
@@ -170,6 +213,38 @@ export function MesaDetail({ tableId }: { tableId: string }) {
           </Button>
         </div>
       )}
+
+      <Dialog
+        open={releaseOpen}
+        onOpenChange={(next) => {
+          if (!next && !releasing) setReleaseOpen(false);
+        }}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>¿Liberar mesa?</DialogTitle>
+            <DialogDescription>
+              La cuenta no tiene productos agregados. Se cancelará sin cobrar y
+              la mesa quedará libre.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={releasing}
+              onClick={() => setReleaseOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              disabled={releasing}
+              onClick={() => void confirmRelease()}
+            >
+              {releasing ? "Liberando…" : "Sí, liberar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

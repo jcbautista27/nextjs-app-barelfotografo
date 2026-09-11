@@ -54,7 +54,7 @@ export function MesasGrid() {
             Toca una mesa para ver o abrir su cuenta
           </p>
         </div>
-        <Button render={<Link href="/venta-directa" />}>
+        <Button nativeButton={false} render={<Link href="/venta-directa" />}>
           <ShoppingCart /> Venta directa
         </Button>
       </div>
@@ -114,6 +114,7 @@ export function MesasGrid() {
         <Button
           variant="ghost"
           className="text-muted-foreground"
+          nativeButton={false}
           render={<Link href="/venta-directa" />}
         >
           <Plus /> Venta directa
